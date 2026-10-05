@@ -1,10 +1,10 @@
-# Contributing to dsh-maestro-ci
+# Contributing to maestro-ci
 
-Thank you for contributing to **dsh-maestro-ci** (`ddtcorex/dsh-maestro-ci`) — reusable GitHub Actions workflows for the Maestro suite. Callers live in each repo as a thin `.github/workflows/ci.yml`; fix or extend pipelines here once and every repo picks it up on its next run.
+Thank you for contributing to **maestro-ci** (`ddtcorex/maestro-ci`) — reusable GitHub Actions workflows for the Maestro suite. Callers live in each repo as a thin `.github/workflows/ci.yml`; fix or extend pipelines here once and every repo picks it up on its next run.
 
 ## Getting Started
 
-1. **Fork and clone** `github.com/ddtcorex/dsh-maestro-ci`.
+1. **Fork and clone** `github.com/ddtcorex/maestro-ci`.
 2. This repo is **CI-only** (no `package.json`, no `lib/` build). Workflows live in `.github/workflows/`:
    - `node-plugin.yml` — CI for every Node plugin package (`packages/dsh-maestro-*`, `maestro-skills`)
    - `node-release.yml` — tag-triggered publish (`pnpm publish --access public` + GitHub Release)
@@ -93,7 +93,7 @@ This project follows the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUC
 
 - General questions: open a GitHub Discussion or issue.
 - Contact maintainer: [kaido4492@gmail.com](mailto:kaido4492@gmail.com)
-- Security vulnerabilities: use GitHub's private advisory reporting at `https://github.com/ddtcorex/dsh-maestro-ci/security/advisories` — do not file a public issue.
+- Security vulnerabilities: use GitHub's private advisory reporting at `https://github.com/ddtcorex/maestro-ci/security/advisories` — do not file a public issue.
 
 ## License
 
