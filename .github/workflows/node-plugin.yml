@@ -85,7 +85,10 @@ jobs:
             node ../maestro-harness/scripts/enforce-rules.mjs --check-protection || true
           else
             echo "[enforce-rules] no local script, running inline leak guard"
-            if grep -R --include="*.md" --include="*.ts" --include="*.js" --include="*.json" "dsh-company\|dsh-home" . 2>/dev/null | grep -v ".git" | grep -q .; then
+            # Match the FULL private hostnames, not the bare tunnel prefixes: those
+            # prefixes are also ordinary harness home directory names, so a prefix
+            # grep matches this very file forever.
+            if grep -RE --include="*.md" --include="*.ts" --include="*.js" --include="*.json" "dsh-(home|company)\.ddtcorex\.com" . 2>/dev/null | grep -v "\.git/" | grep -q .; then
               echo "❌ private hostname leak detected"; exit 1
             fi
             echo "[enforce-rules] inline guard OK"
