@@ -12,7 +12,7 @@
 set -uo pipefail
 
 META_ROOT="${MAESTRO_HARNESS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-# dsh-maestro-ci lives at <meta-root>/dsh-maestro-ci; callers live elsewhere.
+# maestro-ci lives at <meta-root>/dsh-maestro-ci; callers live elsewhere.
 if [ ! -d "$META_ROOT/packages" ]; then
   echo "✗ cannot resolve META_ROOT: $META_ROOT missing packages/ — set MAESTRO_HARNESS_ROOT or run from within maestro-harness checkout" >&2
   exit 1
