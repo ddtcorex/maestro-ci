@@ -1,4 +1,4 @@
-# AGENTS.md — dsh-maestro-ci
+# AGENTS.md — maestro-ci
 
 Reusable GitHub Actions for the Maestro suite. See `README.md` for workflow contracts (`node-plugin.yml`, `node-release.yml`).
 
