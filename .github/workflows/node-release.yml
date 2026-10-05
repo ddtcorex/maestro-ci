@@ -67,7 +67,8 @@ jobs:
             node ../maestro-harness/scripts/enforce-rules.mjs --check-publish || true
           else
             echo "[enforce-rules] no local script, running inline leak guard"
-            if grep -R --include="*.md" --include="*.ts" --include="*.js" --include="*.json" "dsh-company\|dsh-home" . 2>/dev/null | grep -v ".git" | grep -q .; then
+            # Full hostnames only — see the identical guard in node-plugin.yml.
+            if grep -RE --include="*.md" --include="*.ts" --include="*.js" --include="*.json" "dsh-(home|company)\.ddtcorex\.com" . 2>/dev/null | grep -v "\.git/" | grep -q .; then
               echo "❌ private hostname leak detected"; exit 1
             fi
           fi
