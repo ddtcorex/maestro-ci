@@ -107,7 +107,7 @@ PY2
       for cand in "$META_ROOT/packages/$repo" "$META_ROOT/$repo"; do
         [ -d "$cand/.git" ] && { src="$cand"; break; }
       done
-      if [ -z "$src" ]; then echo "✗ sibling $repo không tìm thấy checkout local"; failures=$((failures+1)); return; fi
+      if [ -z "$src" ]; then echo "✗ sibling $repo has no local checkout"; failures=$((failures+1)); return; fi
       local dest="$SB/${target:-$repo}"
       mkdir -p "$(dirname "$dest")"
       git clone -q --no-hardlinks --branch master "$src" "$dest" || { echo "✗ clone sibling $repo"; failures=$((failures+1)); return; }
@@ -158,5 +158,5 @@ for d in "$@"; do
 done
 
 echo ""
-echo "═══════ KẾT QUẢ: $failures repo FAIL ═══════"
+echo "═══════ RESULT: $failures repo(s) FAILED ═══════"
 exit $((failures > 0))
