@@ -93,10 +93,16 @@ PY2
   # diverging from it.
   local SANDBOX_ROOT="${REHEARSE_SANDBOX_ROOT:-$HOME/.cache/dsh-maestro-ci-rehearse}"
   mkdir -p "$SANDBOX_ROOT"
-  local SB; SB=$(mktemp -d "$SANDBOX_ROOT/rehearse.XXXXXX")
+  local SB; SB=$(realpath "$(mktemp -d "$SANDBOX_ROOT/rehearse.XXXXXX")")
   trap 'rm -rf "$SB"' RETURN
+  # The caller sits two levels down so sibling targets such as
+  # ../maestro-reviewer (a ../../ path from the caller) still land inside $SB,
+  # which the trap removes; a target directly under $SB/repo's parent used to
+  # land in $SANDBOX_ROOT, survive the run and fail the next clone.
+  local WD="$SB/w/w"
+  mkdir -p "$WD"
   local BR; BR=$(git -C "$REPO_DIR" branch --show-current)
-  git clone -q --no-hardlinks --branch "$BR" "$REPO_DIR" "$SB/repo" || { echo "✗ clone caller"; failures=$((failures+1)); return; }
+  git clone -q --no-hardlinks --branch "$BR" "$REPO_DIR" "$WD/repo" || { echo "✗ clone caller"; failures=$((failures+1)); return; }
 
   if [ -n "$IN_SIBLINGS" ]; then
     while read -r repo ref target; do
@@ -108,17 +114,21 @@ PY2
         [ -d "$cand/.git" ] && { src="$cand"; break; }
       done
       if [ -z "$src" ]; then echo "✗ sibling $repo has no local checkout"; failures=$((failures+1)); return; fi
-      local dest="$SB/${target:-$repo}"
+      local dest; dest=$(realpath -m "$WD/${target:-$repo}")
+      case "$dest" in
+        "$SB"/*) ;;
+        *) echo "✗ sibling $repo target ${target:-$repo} escapes the sandbox"; failures=$((failures+1)); return ;;
+      esac
       mkdir -p "$(dirname "$dest")"
       git clone -q --no-hardlinks --branch master "$src" "$dest" || { echo "✗ clone sibling $repo"; failures=$((failures+1)); return; }
-      echo "  sibling: $repo@$ref -> ${dest#$SB/}"
+      echo "  sibling: $repo@$ref -> ${target:-$repo}"
       (cd "$dest" && pnpm install --frozen-lockfile >/dev/null 2>&1 && pnpm build >/dev/null 2>&1) \
         || { echo "✗ sibling $repo install/build"; failures=$((failures+1)); return; }
     done <<< "$IN_SIBLINGS"
   fi
 
   # ---- the actual pipeline ----
-  cd "$SB/repo"
+  cd "$WD/repo"
   local step; step="pnpm install --frozen-lockfile"
   echo "→ $step"
   pnpm install --frozen-lockfile >/tmp/rh-$NAME-install.log 2>&1 \
