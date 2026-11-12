@@ -18,7 +18,36 @@ if [ ! -d "$META_ROOT/packages" ]; then
   exit 1
 fi
 
+# pnpm is not guaranteed on PATH. Hook and agent shells are non-login, so nvm
+# never runs and a bare `pnpm` call dies with ENOENT, which writes nothing to the
+# step log and surfaces as an empty "tail:" that looks like a broken lockfile.
+resolve_pnpm() {
+  command -v pnpm >/dev/null 2>&1 && return 0
+  local cand
+  for cand in $(ls -1d "$HOME"/.nvm/versions/node/*/bin/pnpm 2>/dev/null | sort -Vr) \
+              "$HOME/.local/share/pnpm/pnpm" /usr/local/bin/pnpm; do
+    if [ -x "$cand" ]; then
+      PATH="$(dirname "$cand"):$PATH"; export PATH; return 0
+    fi
+  done
+  return 1
+}
+
+resolve_pnpm || { echo "✗ pnpm not found on PATH and no nvm or local install to fall back to" >&2; exit 1; }
+
 failures=0
+
+# One-line cause for a failed step. An EMPTY log means the command never ran
+# (spawn ENOENT), which must not be reported as an empty "tail:" hint.
+step_hint() {
+  local log="$1" pattern="${2:-}"
+  if [ ! -s "$log" ]; then echo "no output, command missing on PATH?"; return; fi
+  if [ -n "$pattern" ]; then
+    local hit; hit=$(grep -oE "$pattern" "$log" | head -1 | cut -c1-100)
+    [ -n "$hit" ] && { echo "$hit"; return; }
+  fi
+  tail -2 "$log" | head -1 | cut -c1-100
+}
 
 rehearse_one() {
   local REPO_DIR="$1"
@@ -132,23 +161,23 @@ PY2
   local step; step="pnpm install --frozen-lockfile"
   echo "→ $step"
   pnpm install --frozen-lockfile >/tmp/rh-$NAME-install.log 2>&1 \
-    || { echo "✗ $step (tail: $(grep -oE 'ERR_[A-Z_]+' /tmp/rh-$NAME-install.log | head -1))"; failures=$((failures+1)); return; }
+    || { echo "✗ $step ($(step_hint /tmp/rh-$NAME-install.log 'ERR_[A-Z_]+'))"; failures=$((failures+1)); return; }
 
   if [ "$IN_RUNBUILD" = "true" ]; then
     step="pnpm build"; echo "→ $step"
     pnpm build >/tmp/rh-$NAME-build.log 2>&1 \
-      || { echo "✗ $step ($(tail -2 /tmp/rh-$NAME-build.log | head -1 | cut -c1-100))"; failures=$((failures+1)); return; }
+      || { echo "✗ $step ($(step_hint /tmp/rh-$NAME-build.log))"; failures=$((failures+1)); return; }
   fi
 
   if [ "$IN_CLIENT" = "true" ]; then
     step="pnpm run build:client"; echo "→ $step"
     pnpm run build:client >/tmp/rh-$NAME-client.log 2>&1 \
-      || { echo "✗ $step"; failures=$((failures+1)); return; }
+      || { echo "✗ $step ($(step_hint /tmp/rh-$NAME-client.log 'ERR_[A-Z_]+'))"; failures=$((failures+1)); return; }
   fi
 
   step="pnpm test"; echo "→ $step"
   pnpm test >/tmp/rh-$NAME-test.log 2>&1 \
-    || { echo "✗ $step ($(grep -oE 'Tests[^$]*failed.*|FAIL[^$]*' /tmp/rh-$NAME-test.log | head -1 | cut -c1-80))"; failures=$((failures+1)); return; }
+    || { echo "✗ $step ($(step_hint /tmp/rh-$NAME-test.log 'Tests[^$]*failed.*|FAIL[^$]*'))"; failures=$((failures+1)); return; }
 
   if [ "$IN_LIB" = "true" ]; then
     step="test -f lib/index.js"; echo "→ $step"
@@ -157,7 +186,7 @@ PY2
 
   step="pnpm publish --dry-run"; echo "→ $step"
   pnpm publish --dry-run --access public --no-git-checks >/tmp/rh-$NAME-pub.log 2>&1 \
-    || { echo "✗ $step"; failures=$((failures+1)); return; }
+    || { echo "✗ $step ($(step_hint /tmp/rh-$NAME-pub.log 'ERR_[A-Z_]+'))"; failures=$((failures+1)); return; }
   if grep -qE 'link:|file:' /tmp/rh-$NAME-pub.log; then :; fi
 
   echo "✓ $NAME PASS"
