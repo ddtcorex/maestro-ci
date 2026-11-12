@@ -21,7 +21,7 @@ declare -A REPO=(
   [config-lib]=dsh-maestro-config-lib [config]=dsh-maestro-config
   [remote]=dsh-maestro-remote         [review]=maestro-reviewer
   [notifier]=dsh-maestro-notifier     [guard]=dsh-maestro-guard
-  [observe]=dsh-maestro-observe       [memory]=dsh-maestro-memory
+  [observe]=dsh-maestro-observe       [memory]=maestro-memory
   [mobile]=dsh-maestro-mobile         [govard-pkg]=dsh-maestro-govard
   [skills]=maestro-skills
 )
