@@ -68,7 +68,7 @@ bash -n scripts/rehearse.sh
 bash -n scripts/publish-all.sh
 
 # Rehearse against a real caller (catches frozen-lockfile, sibling ordering, pnpm version)
-./scripts/rehearse.sh <workspace-root>/packages/dsh-maestro-memory
+./scripts/rehearse.sh <workspace-root>/packages/dsh-maestro-notifier
 ./scripts/rehearse.sh <workspace-root>/packages/dsh-maestro-config
 ```
 
